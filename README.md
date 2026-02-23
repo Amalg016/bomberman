@@ -1,34 +1,20 @@
 # 💣 Go-Bomberman TUI
 
-A high-performance, concurrent, grid-based multiplayer Bomberman game for the terminal, written in Go.
+A multiplayer Bomberman game for the terminal with **automatic room discovery** over your local network.
 
-Players connect over a local network (Wi-Fi/Hotspot) and play in real-time via a colorful terminal UI.
-
-## Features
-
-- **Multiplayer** — Up to 4 players over local TCP
-- **Server-Authoritative** — All game logic runs on the server to prevent cheating
-- **Concurrent Bombs** — Bombs tick in the background using goroutines; chain reactions supported
-- **Rich TUI** — Colored terminal interface powered by [Bubbletea](https://github.com/charmbracelet/bubbletea) + [Lipgloss](https://github.com/charmbracelet/lipgloss)
-- **Cross-Platform** — Compile for Linux, macOS, and Windows
+No IP addresses needed — just create a room and your friends will see it automatically!
 
 ## Quick Start
 
-### Host a Game (Server + Player)
-
 ```bash
-go run ./cmd/server/ --port 9999 --name "Host"
+go run ./cmd/bomberman/
 ```
 
-The server prints your local IP addresses. Share one with your friends.
+That's it! Use the menu to:
+- **Create Room** — Host a game, others on your network will see it
+- **Join Room** — Browse and join rooms on your network
 
-### Join a Game (Client)
-
-```bash
-go run ./cmd/client/ --addr 192.168.x.x:9999 --name "Alice"
-```
-
-### Controls
+## Controls
 
 | Key | Action |
 |-----|--------|
@@ -37,53 +23,64 @@ go run ./cmd/client/ --addr 192.168.x.x:9999 --name "Alice"
 | `A` / `←` | Move Left |
 | `D` / `→` | Move Right |
 | `Space` | Place Bomb |
-| `Enter` | Start Game (from lobby) |
-| `Q` / `Esc` | Quit |
+| `Enter` | Start Game (lobby) / Select (menu) |
+| `Esc` | Back / Quit |
+
+## How It Works
+
+1. **Host** creates a room → starts TCP game server + UDP broadcast
+2. **Players** browse rooms → UDP listener discovers rooms on the LAN
+3. Player selects a room → TCP connects to the host
+4. **Enter** starts the game from the lobby
+
+```mermaid
+sequenceDiagram
+    Host->>LAN: UDP broadcast (room info, every 1s)
+    Player->>LAN: UDP listen
+    LAN-->>Player: Discovers "MyRoom" [2/4 players]
+    Player->>Host: TCP connect (join game)
+    Host->>Player: Game state (20 ticks/sec)
+```
 
 ## Building
 
 ```bash
-# Build both binaries
-go build -o bomberman-server ./cmd/server/
-go build -o bomberman-client ./cmd/client/
+# Build single binary
+go build -o bomberman ./cmd/bomberman/
 
 # Cross-compile for friends
-GOOS=windows GOARCH=amd64 go build -o bomberman-client.exe ./cmd/client/
-GOOS=darwin GOARCH=arm64 go build -o bomberman-client-mac ./cmd/client/
+GOOS=windows GOARCH=amd64 go build -o bomberman.exe ./cmd/bomberman/
+GOOS=darwin GOARCH=arm64 go build -o bomberman-mac ./cmd/bomberman/
 ```
+
+## Features
+
+- **LAN Room Discovery** — UDP broadcast auto-discovers rooms (Mini Militia-style)
+- **Server-Authoritative** — All game logic on the server, no cheating
+- **Concurrent Bombs** — Chain reactions, soft wall destruction
+- **Rich TUI** — Lipgloss-styled with player colors, fire effects, HUD
+- **Single Binary** — One executable for hosting and joining
 
 ## Project Structure
 
 ```
 go-bomberman/
-├── cmd/
-│   ├── server/          # Host entry point (server + embedded TUI)
-│   └── client/          # Player entry point
+├── cmd/bomberman/       # Single unified entry point
 ├── internal/
-│   ├── game/            # Core engine (types, board, movement, bombs)
+│   ├── game/            # Engine (types, board, movement, bombs)
 │   ├── network/         # TCP protocol, server, client
+│   ├── discovery/       # UDP broadcast room discovery
 │   └── ui/              # Bubbletea model + Lipgloss renderer
 ├── go.mod
 └── README.md
 ```
 
-## Server Flags
+## Flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--port` | `9999` | TCP port to listen on |
-| `--name` | `Host` | Host player name |
-| `--width` | `15` | Board width (auto-corrected to odd) |
-| `--height` | `13` | Board height (auto-corrected to odd) |
-| `--max-players` | `4` | Maximum player count |
-
-## How It Works
-
-1. **Server** opens a TCP port and starts the game engine at 20 ticks/second
-2. **Clients** connect, send a join message, and receive a player ID
-3. Players send **actions** (move/bomb) to the server
-4. Server processes actions, updates state, and **broadcasts** the full game state every tick
-5. Clients render the received state using Bubbletea + Lipgloss
+| `--name` | *(prompted)* | Your player name |
+| `--port` | `9999` | TCP game port (hosting) |
 
 ## License
 
