@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -236,7 +237,17 @@ func RenderHUD(state *game.GameState, myID string) string {
 	}
 
 	parts = append(parts, "", lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")).Render("Players:"))
+
+	// Sort players by color index so the list order is stable across renders.
+	sortedPlayers := make([]*game.Player, 0, len(state.Players))
 	for _, p := range state.Players {
+		sortedPlayers = append(sortedPlayers, p)
+	}
+	sort.Slice(sortedPlayers, func(i, j int) bool {
+		return sortedPlayers[i].Color < sortedPlayers[j].Color
+	})
+
+	for _, p := range sortedPlayers {
 		colorIdx := p.Color % len(playerColors)
 		nameStyle := lipgloss.NewStyle().Foreground(playerColors[colorIdx])
 		status := "❤️ "
