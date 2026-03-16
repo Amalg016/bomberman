@@ -100,7 +100,7 @@ func (e *Engine) AddPlayer(id, name string) error {
 		Name:      name,
 		Pos:       spawns[spawnIdx],
 		Alive:     true,
-		BombMax:   1,
+		BombMax:   3,
 		BombRange: 2,
 		BombsUsed: 0,
 		Color:     spawnIdx,

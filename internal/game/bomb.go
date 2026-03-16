@@ -51,14 +51,10 @@ func (e *Engine) tickBombs() {
 		e.explode(e.State.Bombs[i], detonated)
 	}
 
-	// Remove detonated bombs and return bomb count to owners
+	// Remove detonated bombs
 	remaining := make([]*Bomb, 0, len(e.State.Bombs))
 	for i, b := range e.State.Bombs {
-		if detonated[i] {
-			if p, ok := e.State.Players[b.OwnerID]; ok {
-				p.BombsUsed--
-			}
-		} else {
+		if !detonated[i] {
 			remaining = append(remaining, b)
 		}
 	}
