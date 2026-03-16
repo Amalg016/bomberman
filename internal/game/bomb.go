@@ -131,8 +131,9 @@ func (e *Engine) explode(bomb *Bomb, detonated map[int]bool) {
 		}
 	}
 
-	// Damage players caught in fire (including the bomb center)
+	// Damage players and enemies caught in fire (including the bomb center)
 	e.damagePlayersInFire()
+	e.damageEnemiesInFire()
 }
 
 // damagePlayersInFire kills any alive player standing on a fire tile.

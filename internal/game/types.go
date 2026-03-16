@@ -71,6 +71,15 @@ type Fire struct {
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
+// Enemy represents an AI-controlled enemy on the board.
+type Enemy struct {
+	ID        string    `json:"id"`
+	Pos       Position  `json:"pos"`
+	Alive     bool      `json:"alive"`
+	Dir       Direction `json:"dir"`
+	MoveTimer int       `json:"move_timer"`
+}
+
 // GameStatus represents the current game phase.
 type GameStatus int
 
@@ -87,6 +96,7 @@ type GameState struct {
 	Players map[string]*Player `json:"players"`
 	Bombs   []*Bomb            `json:"bombs"`
 	Fires   []Fire             `json:"fires"`
+	Enemies []*Enemy           `json:"enemies"`
 	Width   int                `json:"width"`
 	Height  int                `json:"height"`
 	Status  GameStatus         `json:"status"`
@@ -102,6 +112,7 @@ type GameConfig struct {
 	TickRate        int           `json:"tick_rate"` // Ticks per second
 	MaxPlayers      int           `json:"max_players"`
 	SoftWallDensity float64       `json:"soft_wall_density"` // 0.0 to 1.0
+	EnemyCount      int           `json:"enemy_count"`
 }
 
 // DefaultConfig returns a sensible default game configuration.
@@ -114,6 +125,7 @@ func DefaultConfig() GameConfig {
 		TickRate:        20,
 		MaxPlayers:      4,
 		SoftWallDensity: 0.4,
+		EnemyCount:      3,
 	}
 }
 

@@ -23,6 +23,7 @@ func NewEngine(config GameConfig) *Engine {
 		Players: make(map[string]*Player),
 		Bombs:   make([]*Bomb, 0),
 		Fires:   make([]Fire, 0),
+		Enemies: make([]*Enemy, 0),
 		Width:   config.Width,
 		Height:  config.Height,
 		Status:  StatusLobby,
@@ -123,6 +124,7 @@ func (e *Engine) StartGame() error {
 		return fmt.Errorf("need at least 1 player to start")
 	}
 	e.State.Status = StatusRunning
+	e.spawnEnemies()
 	return nil
 }
 
@@ -136,6 +138,7 @@ func (e *Engine) tick() {
 		// Process game logic while holding the lock
 		e.drainActions()
 		e.tickBombs()
+		e.tickEnemies()
 		e.clearExpiredFires()
 		e.checkWinCondition()
 	}
@@ -231,11 +234,19 @@ func (e *Engine) copyStateLocked() GameState {
 	firesCopy := make([]Fire, len(e.State.Fires))
 	copy(firesCopy, e.State.Fires)
 
+	// Copy enemies
+	enemiesCopy := make([]*Enemy, len(e.State.Enemies))
+	for i, en := range e.State.Enemies {
+		ce := *en
+		enemiesCopy[i] = &ce
+	}
+
 	return GameState{
 		Board:   boardCopy,
 		Players: playersCopy,
 		Bombs:   bombsCopy,
 		Fires:   firesCopy,
+		Enemies: enemiesCopy,
 		Width:   e.State.Width,
 		Height:  e.State.Height,
 		Status:  e.State.Status,

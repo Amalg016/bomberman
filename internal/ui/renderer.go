@@ -48,6 +48,9 @@ var (
 	fireStyle = lipgloss.NewStyle().
 			Background(lipgloss.Color("#ff6600")).Foreground(lipgloss.Color("#ffcc00")).Bold(true)
 
+	enemyStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("#1a1a2e")).Foreground(lipgloss.Color("#ff2222")).Bold(true)
+
 	playerColors = []lipgloss.Color{
 		lipgloss.Color("#00ff88"),
 		lipgloss.Color("#4488ff"),
@@ -171,13 +174,19 @@ func RenderBoard(state *game.GameState, myID string) string {
 			playerSet[p.Pos] = p
 		}
 	}
+	enemySet := make(map[game.Position]*game.Enemy)
+	for _, en := range state.Enemies {
+		if en.Alive {
+			enemySet[en.Pos] = en
+		}
+	}
 
 	var rows []string
 	for y := 0; y < state.Height; y++ {
 		var cells []string
 		for x := 0; x < state.Width; x++ {
 			pos := game.Position{X: x, Y: y}
-			cells = append(cells, renderCell(state.Board[y][x], pos, fireSet, bombSet, playerSet, myID))
+			cells = append(cells, renderCell(state.Board[y][x], pos, fireSet, bombSet, playerSet, enemySet, myID))
 		}
 		rows = append(rows, strings.Join(cells, ""))
 	}
@@ -186,7 +195,8 @@ func RenderBoard(state *game.GameState, myID string) string {
 
 func renderCell(tile game.TileType, pos game.Position,
 	fireSet map[game.Position]bool, bombSet map[game.Position]*game.Bomb,
-	playerSet map[game.Position]*game.Player, myID string) string {
+	playerSet map[game.Position]*game.Player, enemySet map[game.Position]*game.Enemy,
+	myID string) string {
 
 	if p, ok := playerSet[pos]; ok {
 		colorIdx := p.Color % len(playerColors)
@@ -196,6 +206,9 @@ func renderCell(tile game.TileType, pos game.Position,
 			return style.Background(playerColors[colorIdx]).Render("██")
 		}
 		return style.Render(fmt.Sprintf("P%d", p.Color+1))
+	}
+	if _, ok := enemySet[pos]; ok {
+		return enemyStyle.Render("EE")
 	}
 	if fireSet[pos] {
 		return fireStyle.Render("░░")
@@ -234,6 +247,19 @@ func RenderHUD(state *game.GameState, myID string) string {
 		} else {
 			parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")).Render("💀 DRAW"))
 		}
+	}
+
+	// Enemy count
+	aliveEnemies := 0
+	for _, en := range state.Enemies {
+		if en.Alive {
+			aliveEnemies++
+		}
+	}
+	if len(state.Enemies) > 0 {
+		parts = append(parts, "",
+			lipgloss.NewStyle().Foreground(lipgloss.Color("#ff2222")).Render(
+				fmt.Sprintf("👾 Enemies: %d/%d", aliveEnemies, len(state.Enemies))))
 	}
 
 	parts = append(parts, "", lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")).Render("Players:"))

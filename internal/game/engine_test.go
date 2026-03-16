@@ -291,3 +291,142 @@ func TestWinCondition(t *testing.T) {
 		t.Errorf("winner should be p1, got %s", engine.State.Winner)
 	}
 }
+
+func TestSpawnEnemies(t *testing.T) {
+	config := DefaultConfig()
+	config.SoftWallDensity = 0
+	config.EnemyCount = 3
+	engine := NewEngine(config)
+	engine.AddPlayer("p1", "Alice")
+	engine.State.Status = StatusRunning
+	engine.spawnEnemies()
+
+	if len(engine.State.Enemies) != 3 {
+		t.Fatalf("expected 3 enemies, got %d", len(engine.State.Enemies))
+	}
+
+	spawns := SpawnPositions(config.Width, config.Height)
+	safeSet := makeSafeSet(spawns)
+
+	for _, enemy := range engine.State.Enemies {
+		if !enemy.Alive {
+			t.Errorf("enemy %s should be alive at spawn", enemy.ID)
+		}
+		if safeSet[enemy.Pos] {
+			t.Errorf("enemy %s spawned in safe zone at (%d,%d)", enemy.ID, enemy.Pos.X, enemy.Pos.Y)
+		}
+		if engine.State.Board[enemy.Pos.Y][enemy.Pos.X] != Empty {
+			t.Errorf("enemy %s spawned on non-empty tile at (%d,%d)", enemy.ID, enemy.Pos.X, enemy.Pos.Y)
+		}
+	}
+}
+
+func TestEnemyMovement(t *testing.T) {
+	config := DefaultConfig()
+	config.SoftWallDensity = 0
+	config.EnemyCount = 0 // we'll add manually
+	engine := NewEngine(config)
+	engine.AddPlayer("p1", "Alice")
+	engine.State.Status = StatusRunning
+
+	// Place one enemy in a known clear position
+	enemy := &Enemy{
+		ID:        "test_enemy",
+		Pos:       Position{X: 5, Y: 5},
+		Alive:     true,
+		Dir:       DirRight,
+		MoveTimer: enemyMoveInterval - 1, // will move on next tick
+	}
+	engine.State.Enemies = append(engine.State.Enemies, enemy)
+
+	// Move player far away so chase doesn't bias direction too much
+	engine.State.Players["p1"].Pos = Position{X: 13, Y: 11}
+
+	startPos := enemy.Pos
+	engine.tickEnemies()
+
+	// Enemy should have moved (it had enough timer built up)
+	if enemy.Pos == startPos {
+		t.Error("enemy should have moved after reaching move interval")
+	}
+}
+
+func TestEnemyKillsPlayer(t *testing.T) {
+	config := DefaultConfig()
+	config.SoftWallDensity = 0
+	config.EnemyCount = 0
+	engine := NewEngine(config)
+	engine.AddPlayer("p1", "Alice")
+	engine.State.Status = StatusRunning
+
+	p := engine.State.Players["p1"]
+	p.Pos = Position{X: 5, Y: 5}
+
+	// Place enemy on same tile
+	enemy := &Enemy{
+		ID:    "test_enemy",
+		Pos:   Position{X: 5, Y: 5},
+		Alive: true,
+	}
+	engine.State.Enemies = append(engine.State.Enemies, enemy)
+
+	engine.checkEnemyPlayerCollisions()
+
+	if p.Alive {
+		t.Error("player should be killed by enemy on same tile")
+	}
+}
+
+func TestEnemyDiesInFire(t *testing.T) {
+	config := DefaultConfig()
+	config.SoftWallDensity = 0
+	config.EnemyCount = 0
+	engine := NewEngine(config)
+	engine.State.Status = StatusRunning
+
+	enemy := &Enemy{
+		ID:    "test_enemy",
+		Pos:   Position{X: 5, Y: 5},
+		Alive: true,
+	}
+	engine.State.Enemies = append(engine.State.Enemies, enemy)
+
+	// Place fire at the enemy's position
+	engine.State.Fires = append(engine.State.Fires, Fire{
+		Pos: Position{X: 5, Y: 5},
+	})
+
+	engine.damageEnemiesInFire()
+
+	if enemy.Alive {
+		t.Error("enemy standing on fire should be killed")
+	}
+}
+
+func TestEnemyNotCountedInWin(t *testing.T) {
+	config := DefaultConfig()
+	config.SoftWallDensity = 0
+	config.EnemyCount = 0
+	engine := NewEngine(config)
+	engine.AddPlayer("p1", "Alice")
+	engine.AddPlayer("p2", "Bob")
+	engine.State.Status = StatusRunning
+
+	// Add an alive enemy
+	engine.State.Enemies = append(engine.State.Enemies, &Enemy{
+		ID: "e1", Pos: Position{X: 5, Y: 5}, Alive: true,
+	})
+
+	// Kill p2
+	engine.State.Players["p2"].Alive = false
+	engine.checkWinCondition()
+
+	// Game should be over with p1 winning — enemy doesn't count as a player
+	if engine.State.Status != StatusOver {
+		t.Error("game should be over when only 1 player alive, regardless of enemies")
+	}
+	if engine.State.Winner != "p1" {
+		t.Errorf("winner should be p1, got %s", engine.State.Winner)
+	}
+}
+

@@ -1,6 +1,6 @@
 # 💣 Go-Bomberman TUI
 
-A multiplayer Bomberman game for the terminal with **automatic room discovery** over your local network.
+A multiplayer Bomberman game for the terminal with **automatic room discovery** over your local network and **AI enemies** that chase you down.
 
 No IP addresses needed — just create a room and your friends will see it automatically!
 
@@ -56,6 +56,7 @@ GOOS=darwin GOARCH=arm64 go build -o bomberman-mac ./cmd/bomberman/
 ## Features
 
 - **LAN Room Discovery** — UDP broadcast auto-discovers rooms (Mini Militia-style)
+- **AI Enemies** — Smart NPCs that chase players, flee from bombs, and roam the board
 - **Server-Authoritative** — All game logic on the server, no cheating
 - **Concurrent Bombs** — Chain reactions, soft wall destruction
 - **Rich TUI** — Lipgloss-styled with player colors, fire effects, HUD
@@ -67,7 +68,7 @@ GOOS=darwin GOARCH=arm64 go build -o bomberman-mac ./cmd/bomberman/
 go-bomberman/
 ├── cmd/bomberman/       # Single unified entry point
 ├── internal/
-│   ├── game/            # Engine (types, board, movement, bombs)
+│   ├── game/            # Engine (types, board, movement, bombs, enemies)
 │   ├── network/         # TCP protocol, server, client
 │   ├── discovery/       # UDP broadcast room discovery
 │   └── ui/              # Bubbletea model + Lipgloss renderer

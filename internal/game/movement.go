@@ -49,4 +49,12 @@ func (e *Engine) movePlayer(playerID string, dir Direction) {
 			return
 		}
 	}
+
+	// Check if player walked into an enemy
+	for _, en := range e.State.Enemies {
+		if en.Alive && en.Pos == newPos {
+			p.Alive = false
+			return
+		}
+	}
 }
