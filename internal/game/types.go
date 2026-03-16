@@ -80,6 +80,28 @@ type Enemy struct {
 	MoveTimer int       `json:"move_timer"`
 }
 
+// PickupType represents the kind of power-up.
+type PickupType int
+
+const (
+	PickupBomb  PickupType = iota // +1 bomb to inventory
+	PickupRange                   // +1 explosion range
+)
+
+// Pickup represents a collectible item on the board.
+type Pickup struct {
+	Pos  Position   `json:"pos"`
+	Type PickupType `json:"type"`
+}
+
+// Balance constants for pickups.
+const (
+	PickupBombDropChance  = 0.25 // 25% chance a destroyed wall drops a bomb
+	PickupRangeDropChance = 0.15 // 15% chance (checked if bomb didn't drop)
+	MaxBombs              = 6    // Hard cap on bomb inventory
+	MaxRange              = 4    // Hard cap on explosion range
+)
+
 // GameStatus represents the current game phase.
 type GameStatus int
 
@@ -97,6 +119,7 @@ type GameState struct {
 	Bombs   []*Bomb            `json:"bombs"`
 	Fires   []Fire             `json:"fires"`
 	Enemies []*Enemy           `json:"enemies"`
+	Pickups []Pickup           `json:"pickups"`
 	Width   int                `json:"width"`
 	Height  int                `json:"height"`
 	Status  GameStatus         `json:"status"`

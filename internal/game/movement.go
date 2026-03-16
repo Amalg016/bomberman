@@ -57,4 +57,23 @@ func (e *Engine) movePlayer(playerID string, dir Direction) {
 			return
 		}
 	}
+
+	// Check if player stepped on a pickup
+	for i, pk := range e.State.Pickups {
+		if pk.Pos == newPos {
+			switch pk.Type {
+			case PickupBomb:
+				if p.BombMax < MaxBombs {
+					p.BombMax++
+				}
+			case PickupRange:
+				if p.BombRange < MaxRange {
+					p.BombRange++
+				}
+			}
+			// Remove collected pickup
+			e.State.Pickups = append(e.State.Pickups[:i], e.State.Pickups[i+1:]...)
+			break
+		}
+	}
 }

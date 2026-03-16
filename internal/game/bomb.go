@@ -1,6 +1,9 @@
 package game
 
-import "time"
+import (
+	"math/rand"
+	"time"
+)
 
 // placeBomb places a bomb at the player's current position.
 func (e *Engine) placeBomb(playerID string) {
@@ -108,6 +111,17 @@ func (e *Engine) explode(bomb *Bomb, detonated map[int]bool) {
 					Pos:       pos,
 					ExpiresAt: fireExpiry,
 				})
+				// Random pickup drop
+				roll := rand.Float64()
+				if roll < PickupBombDropChance {
+					e.State.Pickups = append(e.State.Pickups, Pickup{
+						Pos: pos, Type: PickupBomb,
+					})
+				} else if roll < PickupBombDropChance+PickupRangeDropChance {
+					e.State.Pickups = append(e.State.Pickups, Pickup{
+						Pos: pos, Type: PickupRange,
+					})
+				}
 				break
 			}
 

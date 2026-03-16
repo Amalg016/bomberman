@@ -24,6 +24,7 @@ func NewEngine(config GameConfig) *Engine {
 		Bombs:   make([]*Bomb, 0),
 		Fires:   make([]Fire, 0),
 		Enemies: make([]*Enemy, 0),
+		Pickups: make([]Pickup, 0),
 		Width:   config.Width,
 		Height:  config.Height,
 		Status:  StatusLobby,
@@ -241,12 +242,17 @@ func (e *Engine) copyStateLocked() GameState {
 		enemiesCopy[i] = &ce
 	}
 
+	// Copy pickups
+	pickupsCopy := make([]Pickup, len(e.State.Pickups))
+	copy(pickupsCopy, e.State.Pickups)
+
 	return GameState{
 		Board:   boardCopy,
 		Players: playersCopy,
 		Bombs:   bombsCopy,
 		Fires:   firesCopy,
 		Enemies: enemiesCopy,
+		Pickups: pickupsCopy,
 		Width:   e.State.Width,
 		Height:  e.State.Height,
 		Status:  e.State.Status,

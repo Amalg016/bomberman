@@ -51,6 +51,11 @@ var (
 	enemyStyle = lipgloss.NewStyle().
 			Background(lipgloss.Color("#1a1a2e")).Foreground(lipgloss.Color("#ff2222")).Bold(true)
 
+	pickupBombStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("#1a1a2e")).Foreground(lipgloss.Color("#00ddff")).Bold(true)
+	pickupRangeStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("#1a1a2e")).Foreground(lipgloss.Color("#ff66ff")).Bold(true)
+
 	playerColors = []lipgloss.Color{
 		lipgloss.Color("#00ff88"),
 		lipgloss.Color("#4488ff"),
@@ -180,13 +185,17 @@ func RenderBoard(state *game.GameState, myID string) string {
 			enemySet[en.Pos] = en
 		}
 	}
+	pickupSet := make(map[game.Position]game.PickupType)
+	for _, pk := range state.Pickups {
+		pickupSet[pk.Pos] = pk.Type
+	}
 
 	var rows []string
 	for y := 0; y < state.Height; y++ {
 		var cells []string
 		for x := 0; x < state.Width; x++ {
 			pos := game.Position{X: x, Y: y}
-			cells = append(cells, renderCell(state.Board[y][x], pos, fireSet, bombSet, playerSet, enemySet, myID))
+			cells = append(cells, renderCell(state.Board[y][x], pos, fireSet, bombSet, playerSet, enemySet, pickupSet, myID))
 		}
 		rows = append(rows, strings.Join(cells, ""))
 	}
@@ -196,7 +205,7 @@ func RenderBoard(state *game.GameState, myID string) string {
 func renderCell(tile game.TileType, pos game.Position,
 	fireSet map[game.Position]bool, bombSet map[game.Position]*game.Bomb,
 	playerSet map[game.Position]*game.Player, enemySet map[game.Position]*game.Enemy,
-	myID string) string {
+	pickupSet map[game.Position]game.PickupType, myID string) string {
 
 	if p, ok := playerSet[pos]; ok {
 		colorIdx := p.Color % len(playerColors)
@@ -215,6 +224,14 @@ func renderCell(tile game.TileType, pos game.Position,
 	}
 	if _, ok := bombSet[pos]; ok {
 		return bombStyle.Render("()")
+	}
+	if pkType, ok := pickupSet[pos]; ok {
+		switch pkType {
+		case game.PickupBomb:
+			return pickupBombStyle.Render("+B")
+		case game.PickupRange:
+			return pickupRangeStyle.Render("+R")
+		}
 	}
 	switch tile {
 	case game.HardWall:
